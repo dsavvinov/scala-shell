@@ -52,9 +52,10 @@ class Cat(
   override def run(): Int = {
     if (args.isEmpty) {
       // "Interactive" mode
+      println("Entering interactive mode. Please, use \"\\quit\" instead of CTRL-D to exit mode!")
       var str = inputStream.read()
-      while (str.isDefined) {
-        outputStream.write(str.get)
+      while (str.isDefined && str.get != "\\quit") {
+        outputStream.write(str.get + "\n")
         str = inputStream.read()
       }
       return 0
@@ -117,9 +118,10 @@ class Wc(
 
   override def run(): Int = {
     if (args.isEmpty) {
+      println("Entering interactive mode. Please, use \"\\quit\" instead of CTRL-D to exit mode!")
       // "Interactive" mode
       var str = inputStream.read()
-      while (str.isDefined) {
+      while (str.isDefined && str.get != "\\quit") {
         outputStream write count(str.get)
         str = inputStream.read()
       }
