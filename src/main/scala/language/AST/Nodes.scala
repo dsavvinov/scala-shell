@@ -108,7 +108,7 @@ case class CommandExpression(name: String) extends Expression {
     }
   }
 
-  def getArgs : ListBuffer[String] = {
+  def args : ListBuffer[String] = {
     childs.map { _.asInstanceOf[Word].value }
   }
 

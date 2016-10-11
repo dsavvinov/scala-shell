@@ -70,7 +70,7 @@ class Executor(private final val ctx: Context) {
                             , inputStream: InputStream[String] = StdInStream
                             , outputStream: OutputStream[String] = StdOutStream
                             ): Int = {
-    val args: ListBuffer[String] = command.getArgs
+    val args: ListBuffer[String] = command.args
     val cmd = CommandsFactory.getByName(command.name, args.toList, inputStream, outputStream)
     cmd.run()
   }

@@ -67,8 +67,6 @@ object Lexer {
   }
 
   private def consumeStringLiteral(input: ResettableStream[Char]): Option[Token] = {
-    input.mark()
-
     val openingQuote = input.read()
     val quoteContent = StringBuilder.newBuilder
 
@@ -81,7 +79,6 @@ object Lexer {
 
         case quote if Alphabet.isQuote(quote) =>
           val closingQuote = input.read()
-          input.unmark()
           return Some(Token(quoteContent.mkString, StringLiteralToken))
 
         case symbol =>

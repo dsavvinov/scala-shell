@@ -10,8 +10,9 @@ trait InputStream[T] {
   def toJavaInputStream: java.io.InputStream
 }
 
-trait FiniteStream[T] {
+trait FiniteStream[T] extends InputStream[T] {
   def toList: List[T]
+  def isAtEnd(): Boolean
 }
 
 trait OutputStream[T] {
@@ -40,7 +41,7 @@ trait OutputStream[T] {
   * Note: Users of ResettableStreams are responsible for correct marking and
   *       unmarking of positions in stream.
   */
-trait ResettableStream[T] extends InputStream[T] with FiniteStream[T] {
+trait ResettableStream[T] extends FiniteStream[T] {
   def head: Option[T]
 
   def mark()
@@ -49,7 +50,6 @@ trait ResettableStream[T] extends InputStream[T] with FiniteStream[T] {
 
   def unmark()
 
-  def isAtEnd(): Boolean
 
   /**
     * Utility method - will read stream contents until the end or
@@ -67,9 +67,8 @@ trait ResettableStream[T] extends InputStream[T] with FiniteStream[T] {
 /**
   * Implementation of Resettable Input stream on String.
   */
-class StringInputStream(val buffer: String)
-  extends InputStream[Char]
-  with ResettableStream[Char]
+class StringInputStream(private val buffer: String)
+  extends ResettableStream[Char]
 {
 
   override def toJavaInputStream: java.io.InputStream = {
@@ -122,11 +121,9 @@ class StringInputStream(val buffer: String)
   * Could be used as pipe between two sides (visible as output stream
   * to the one side and as an input stream to the other side)
   */
-class ListBufferStream[T](val buffer: ListBuffer[T] = new ListBuffer[T]())
-  extends InputStream[T]
-  with OutputStream[T]
+class ListBufferStream[T](private val buffer: ListBuffer[T] = new ListBuffer[T]())
+  extends OutputStream[T]
   with ResettableStream[T]
-  with FiniteStream[T]
 {
   def writeAll(traversableOnce: TraversableOnce[T]) = {
     traversableOnce.foreach(char => write(char))
