@@ -22,7 +22,7 @@ class PrettyASTPrinter extends Visitor {
 
   override def visit(node: Node): Any = {
     print(s"${node.toString}")
-    if (node.childs.nonEmpty) {
+    if (!node.isLeaf) {
       sb.append(" {")
       indent()
     }
@@ -30,7 +30,7 @@ class PrettyASTPrinter extends Visitor {
   }
 
   override def postvisit(node: Node) = {
-    if (node.childs.nonEmpty) {
+    if (!node.isLeaf) {
       outdent()
       println("}")
     }

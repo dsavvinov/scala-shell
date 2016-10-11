@@ -1,7 +1,9 @@
 package language
 
 import io.StringInputStream
+import language.lexing.Lexer
 import language.AST._
+import language.parsing.Parser
 import org.scalatest.FlatSpec
 
 class ParserTests extends FlatSpec {
@@ -12,23 +14,27 @@ class ParserTests extends FlatSpec {
     val tokens = Lexer.consume(input)
     val tree = Parser.parse(tokens)
 
-    val answerTree = new SyntaxTree(Program().append(CommandExpression("cat")))
+    val answerTree = new SyntaxTree(
+      Program() {
+        CommandExpression("cat")
+      }
+    )
 
     assert(answerTree == tree)
   }
 
   it should "parse single command with some arguments into command node with proper childs" in {
-    val input = new StringInputStream("""echo -f -e "file1.txt" "file2!"""")
+    val input = new StringInputStream("""echo -f -e "file1.txt" file2!""")
     val tokens = Lexer.consume(input)
     val tree = Parser.parse(tokens)
 
     val answerTree = new SyntaxTree(
       Program() {
         CommandExpression("echo") {
-            CommandOption("-f")         \
-            CommandOption("-e")         \
-            WeakQuotationNode("file1.txt")  \
-            WeakQuotationNode("file2!")
+            Word("-f")         \
+            Word("-e")         \
+            Word("file1.txt")  \
+            Word("file2!")
         }
       }
     )
@@ -36,7 +42,7 @@ class ParserTests extends FlatSpec {
   }
 
   it should "parse trivial pipe into pipe-node" in {
-    val input = new StringInputStream("""cat "file1" "file2" | wc""")
+    val input = new StringInputStream("""cat "file1 file2" | wc""")
     val tokens = Lexer.consume(input)
     val tree = Parser.parse(tokens)
 
@@ -44,8 +50,7 @@ class ParserTests extends FlatSpec {
       Program() {
         PipeExpression() {
           CommandExpression("cat") {
-            WeakQuotationNode("file1")   \
-            WeakQuotationNode("file2")
+            Word("file1 file2")
           } \
           CommandExpression("wc")
         }
@@ -55,8 +60,8 @@ class ParserTests extends FlatSpec {
     assert(answerTree == tree)
   }
 
-  it should "parse chained pipes into right-skewed tree" in {
-    val input = new StringInputStream("""cat "file1" "file2" | wc -l | wc -d -f""")
+  it should "parse chained pipes into node with a lot of childs" in {
+    val input = new StringInputStream("""cat file1 file2 | wc -l | wc '-d' -f""")
     val tokens = Lexer.consume(input)
     val tree = Parser.parse(tokens)
 
@@ -64,20 +69,19 @@ class ParserTests extends FlatSpec {
       Program() {
         PipeExpression() {
           CommandExpression("cat") {
-            WeakQuotationNode("file1")   \
-            WeakQuotationNode("file2")
+            Word("file1")   \
+            Word("file2")
           } \
-          PipeExpression() {
-            CommandExpression("wc") {
-              CommandOption("-l")
-            } \
-            CommandExpression("wc") {
-              CommandOption("-d") \
-              CommandOption("-f")
-            }
+          CommandExpression("wc") {
+            Word("-l")
+          } \
+          CommandExpression("wc") {
+            Word("-d") \
+            Word("-f")
           }
         }
-      })
+      }
+    )
     assert (answerTree == tree)
   }
 }

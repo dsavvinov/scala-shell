@@ -1,50 +1,110 @@
 package interpretation
 
+import environment.Context
+import io._
 import language.AST._
 
+import scala.collection.mutable.ListBuffer
+
+/**
+  * Stateless static wrapper of Executor.
+  *
+  * run() executes given SyntaxTree in a given Context,
+  * producing return-code of evaluation.
+  *
+  * Pipes are executed in a non-lazy manner, i.e.
+  * in the expression "foo | bar" second command
+  * will be waiting patiently till the first finish.
+  *
+  * If at least one of the commands in a pipe returns non-zero
+  * termination code, then execution of the whole pipe
+  * will be interrupted, and that code will be returned.
+  *
+  */
 object Interpreter {
-  val environment = new Environment()
-  def run(tree: SyntaxTree): Option[String] = {
-    val executor = new Executor(environment)
-    ???
+  def run(tree: SyntaxTree, ctx: Context): Int = {
+    val executor = new Executor(ctx)
+    executor.execute(tree.root)
   }
 }
 
-class Executor(val environment: Environment) {
-  def execute(node: Node): Option[String] = {
+/**
+  * Simple recursive tree-walker that will execute
+  * given SyntaxTree.
+  *
+  * Note that each instance of Executor is bound
+  * to context, because it's a part of executor's state.
+  * This context will be updated if necessary.
+  *
+  */
+class Executor(private final val ctx: Context) {
+  // Source of the input. For the first command in a pipe it is stdin,
+  // for all the following - output stream of the previous one.
+  var pipeStream: InputStream[String] = StdInStream
+
+  def execute(node: Node): Int = {
     node match {
-      case program: Program => runProgram(program)
-      case pipe: PipeExpression => runPipe(pipe)
-      case cmd: CommandExpression => runCommand(cmd)
-      case literal: Argument => processLiteral(literal)
+      case program: Program =>
+        for (child <- program.expresisons) {
+          // Carefully execute commands one by one, failing after first non-successful
+          val errorCode = execute(child)
+          if (errorCode != 0) {
+            return errorCode
+          }
+        }
+        0
+
+      case pipe: PipeExpression =>
+        executePipe(pipe)
+
+      case assignment: AssignmentExpression =>
+        executeAssignment(assignment)
+
+      case command: CommandExpression =>
+        executeCommand(command)
     }
   }
 
-  def processLiteral(literal: Argument): Option[String] = ???
-
-  def runPipe(pipeExpression: PipeExpression) = ???
-
-  def runProgram(program: Program) = ???
-
-  def runCommand(cmd: CommandExpression): Option[String] = {
-    // Build argument list, carefully checking that each argument is literal
-    val args: List[String] = cmd.childs.map {
-      case literal: Argument => literal.value
-      case other => throw InvalidArgumentTypeException(
-        s"For node $cmd expected Literal as argument, but got $other"
-      )
-    }.toList
-
-    val result = cmd.name match {
-      case "cat" => new Cat(args).run()
-      case "echo" => new Echo(args).run()
-      case "wc" => new Wc(args).run()
-      case "pwd" => new Pwd(args).run()
-      case "exit" => new Exit(args).run()
-      case other => throw InvalidArgumentTypeException(
-        s"Unexpected command name while processing node $cmd"
-      )
-    }
-    ???
+  private def executeCommand(
+                              command: CommandExpression
+                            , inputStream: InputStream[String] = StdInStream
+                            , outputStream: OutputStream[String] = StdOutStream
+                            ): Int = {
+    val args: ListBuffer[String] = command.getArgs
+    val cmd = CommandsFactory.getByName(command.name, args.toList, inputStream, outputStream)
+    cmd.run()
   }
+
+  private def executeAssignment(assignment: AssignmentExpression): Int = {
+    ctx.update(assignment.variable, assignment.value)
+    0
+  }
+
+  private def executePipe(pipe: PipeExpression): Int = {
+    for ((command, ind) <- pipe.commands.view.zipWithIndex) {
+
+      // Last command in pipe writes to stdout
+      if (ind == pipe.commands.length - 1) {
+        val errCode = executeCommand(command, pipeStream, StdOutStream)
+
+        // Don't forget to check error code
+        if (errCode != 0) {
+          return errCode
+        }
+      }
+      // All other write to tmpStream that will become input for the next command
+      else {
+        val outputForCur = new ListBufferStream[String]()
+        val errCode = executeCommand(command, pipeStream, outputForCur)
+        pipeStream = outputForCur
+
+        // Don't forget to check error code
+        if (errCode != 0) {
+          return errCode
+        }
+      }
+    }
+    0
+  }
+
 }

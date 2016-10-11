@@ -1,7 +1,7 @@
 package language
 
 /**
-  * Created by dsavv on 13.09.2016.
+  * Collection of language constants along with checking-functions
   */
 object Alphabet {
   val whitespaceChars = List(' ')
@@ -14,12 +14,17 @@ object Alphabet {
   val backslashSign = '\\'
   val openingCurlyBracket = '{'
   val closingCurlyBracket = '}'
+  val assignmentChar = '='
 
   def isWhitespace(char: Option[Char]): Boolean = {
     char exists { whitespaceChars contains _ }
   }
 
-  def isSymbol(char: Option[Char]): Boolean = !isWhitespace(char)
+  def isSymbol(char: Option[Char]): Boolean = {
+    char.isDefined &&
+    !(isWhitespace(char) || isQuote(char) ||
+      isDollar(char) || isPipe(char) || isAssignment(char))
+  }
 
   def isPipe(char: Option[Char]): Boolean = {
     char contains pipeChar
@@ -53,16 +58,8 @@ object Alphabet {
     char contains weakQuoteChar
   }
 
-  def recognizeAsStrongQuote(text: Option[String]): Boolean = {
-    text exists { it => (it startsWith "\'") && (it endsWith "\'") }
-  }
-
-  def recognizeAsWeakQuote(text: Option[String]): Boolean = {
-    text exists { it => (it startsWith "\"") && (it endsWith "\"") }
-  }
-
-  def recognizeAsOption(text: Option[String]): Boolean = {
-    text exists { _ startsWith "-" }
+  def isAssignment(char: Option[Char]): Boolean = {
+    char contains assignmentChar
   }
 
   def isOpenCurlyBracket(char: Option[Char]): Boolean = {

@@ -1,30 +1,44 @@
 package language.AST
 
-import interpretation.Environment
 import language.AST.ASTImplicits.NodesList
-import language.{Alphabet, ParseException}
 
 import scala.collection.mutable.ListBuffer
-import scala.collection.mutable
 
 /**
-  * Created by dsavv on 19.09.2016.
+  * Abstract class of Syntax Tree node.
+  *
+  * This class demands from all successors to use
+  * list of nodes as the method of storing childs.
+  * Successors are encouraged to expose additional
+  * convenience methods for accessing childrens.
+  *
+  * Also Node defines some utility methods for
+  * comparing and building nodes and trees.
+  *
+  * It is strongly recommended for all of successors
+  * to implement equals() and toString() methods correctly,
+  * because some utility services (like pretty-printing or
+  * comparing SyntaxTrees) relies on that methods.
+  *
   */
 abstract class Node {
-  val childs: ListBuffer[Node] = new ListBuffer[Node]()
+  protected val childs: ListBuffer[Node] = new ListBuffer[Node]()
 
-  def accept(visitor: Visitor): Unit = {
-    visitor previsit this
-    visitor visit this
-    childs.foreach(subtree => {
-      subtree accept visitor
-    })
-    visitor postvisit this
+  def accept(visitor: Visitor) = {
+    visitor.previsit(this)
+    childs.foreach(visitor.visit)
+    visitor.postvisit(this)
   }
+
+  def isLeaf = childs.isEmpty
 
   def append(node: Node): Node = {
     childs.append(node)
     this
+  }
+
+  def appendAll(childs: Traversable[Node]) = {
+    childs.foreach { append }
   }
 
   // For DSL-driven construction of trees
@@ -54,9 +68,25 @@ abstract class Node {
   def toString: String
 }
 
-case class Program() extends Node { }
+case class Program() extends Node {
+  def expresisons = childs.map { _.asInstanceOf[Expression] }
+}
 
 abstract class Expression extends Node { }
+
+case class AssignmentExpression() extends Expression {
+  override def equals(that: scala.Any): Boolean = {
+    that match {
+      case that: AssignmentExpression => true
+      case _ => false
+    }
+  }
+  override def toString = "AssignmentExpression"
+
+  def variable = childs.head.asInstanceOf[Word].value
+
+  def value = childs(1).asInstanceOf[Word].value
+}
 
 case class PipeExpression() extends Expression {
   override def equals(that: scala.Any): Boolean = {
@@ -66,6 +96,8 @@ case class PipeExpression() extends Expression {
     }
   }
   override def toString: String = "PipeExpression"
+
+  def commands : ListBuffer[CommandExpression] = childs.map { _.asInstanceOf[CommandExpression] }
 }
 
 case class CommandExpression(name: String) extends Expression {
@@ -76,37 +108,48 @@ case class CommandExpression(name: String) extends Expression {
     }
   }
 
-  override def toString: String = s"CommandExpression, name = $name"
+  def getArgs : ListBuffer[String] = {
+    childs.map { _.asInstanceOf[Word].value }
+  }
+
+  override def toString: String = s"CommandExpression"
 }
 
-abstract class Argument(val value: String) extends Expression {
+/**
+  * Node that stores one single word (continuous sequence of symbols
+  * without any separators or special chars, or one string literal)
+  *
+  *
+  * It would be nice to specify it more (like, "CommandName", "CommandArgument"),
+  * but unfortunately, we can't, because of the such cases:
+  *
+  *   > foo=ls  # there is no way to know what exactly is the right-hand side
+  *   > $foo    # now we use "ls" in place where command-name is required,
+  *             # so we understand (only now!) that "ls" was command-name
+  *   > ...ls output here...
+  *
+  * Or even trickier:
+  *
+  *   > foo="ls -la"  # though this is a string literal, it still can be used as a command!
+  *   > $foo
+  *   > ...ls output here...
+  *
+  * So we are forced to use such a vague node-type as "Word" and let interpreter
+  * decide what it really is in runtime.
+  *
+  */
+case class Word(value: String) extends Expression {
   override def equals(that: scala.Any): Boolean = {
     that match {
-      case that: Argument => this.value == that.value
+      case that: Word => this.value == that.value
       case _ => false
     }
   }
-
-  override def toString: String = s"Literal, value = $value"
 }
 
-case class StrongQuotationNode(override val value: String) extends Argument(value) { }
-
-case class WeakQuotationNode(override val value: String) extends Argument(value) {
-  case class Substitution(varName: String, begin: Int, end: Int) { }
-
-  val varsToSubsts: mutable.Map[String, Substitution] = mutable.Map.empty
-
-  def expandUsing(env: Environment): String = {
-    var result = value
-    for ( (varName, subst) <- env.varsToValues) {
-      result = result.replaceAllLiterally("${" + varName + "}", subst)
-    }
-
-    result.toString
-  }
 
 
-}
 
-case class CommandOption(override val value: String) extends Argument(value) { }
+
+
+
