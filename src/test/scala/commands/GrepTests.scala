@@ -88,4 +88,12 @@ class GrepTests extends FlatSpec {
   it should "find regex ignoring case" in {
     assertResult( Set(0, 1, 2, 3, 4) ) { runGrep("-i", "h.*o", "test") }
   }
+
+  it should "find regex ignoring case AND matching whole words" in {
+    assertResult( Set(0, 1, 2, 4) ) { runGrep ("-i", "-w", "h...o", "test")}
+  }
+
+  it should "output extra lines with -A option" in {
+    assertResult( Set(0, 1, 4) ) { runGrep ("-w", "-A", "1", "hello", "test")}
+  }
 }

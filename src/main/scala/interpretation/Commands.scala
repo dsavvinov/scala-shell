@@ -257,8 +257,8 @@ class Grep(
   override val name: String = "grep"
 
   class Configuration(arguments: Seq[String]) extends ScallopConf(arguments) {
-    val ignoreCase = opt[Boolean]()
-    val wholeWords = opt[Boolean]()
+    val ignoreCase = opt[Boolean](default = Some(false))
+    val wholeWords = opt[Boolean](default = Some(false))
     val after = opt[Int](short = 'A', validate = { (num: Int) => num >= 0}, default = Some(0) )
     val regex = trailArg[String](name = "Regular expression", default = Some(""))
     val files = trailArg[List[String]](name = "File names", default = Some(Nil), required = false)
@@ -309,12 +309,16 @@ class Grep(
         .split("\n")
     }
 
-
-
-
     for ( (line, ind) <- wholeInput.zipWithIndex) {
+      // Check if line contains pattern
       if (pattern.findFirstIn(line).nonEmpty) {
-        (ind to (ind + conf.after())).foreach { ind => outputStream write (wholeInput(ind) + "\n") }
+        // If contains, then output it and some lines after it,
+        // depending on supported -A option
+        (ind to (ind + conf.after())).foreach { ind =>
+          if (ind < wholeInput.length) {
+            outputStream write (wholeInput(ind) + "\n")
+          }
+        }
       }
     }
     0
