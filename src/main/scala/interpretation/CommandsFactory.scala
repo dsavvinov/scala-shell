@@ -26,6 +26,7 @@ object CommandsFactory {
       case "exit" => new Exit(args, in, out)
       case "pwd" => new Pwd(args, in, out)
       case "wc" => new Wc(args, in, out)
+      case "grep" => new Grep(args, in, out)
       case other => new ExternalCommand(other, args, in, out)
     }
   }

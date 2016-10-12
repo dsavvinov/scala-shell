@@ -90,16 +90,6 @@ class QuotationsTest extends FlatSpec {
     assert(result == "ls -la")
   }
 
-  it should "not expand anything in strong quote" in {
-    val env = new Context()
-    env("x") = """some word"""
-
-    val quote = """it shouldnt '$x' be expanded"""
-    val result = Preprocessor.process(quote, env).toList.mkString
-
-    assert(result == """it shouldnt '$x' be expanded""")
-  }
-
   it should "not stop on escaped chars" in {
     val env = new Context()
     env("name1") = "value1"
@@ -117,4 +107,14 @@ class QuotationsTest extends FlatSpec {
   val result = Preprocessor.process(quote, env).toList.mkString
 
   assertResult("hello, world") { result }
+
+  "Strong quote" should "not expand anything" in {
+    val env = new Context()
+    env("x") = """some word"""
+
+    val quote = """it shouldnt '$x' be expanded"""
+    val result = Preprocessor.process(quote, env).toList.mkString
+
+    assert(result == """it shouldnt '$x' be expanded""")
+  }
 }

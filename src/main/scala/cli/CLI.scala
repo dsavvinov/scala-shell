@@ -51,7 +51,8 @@ object CLI {
           println("Syntax error: " + e.getMessage)
 
         case e : Throwable =>
-          println("Unexpected error: " + e.getMessage)
+          println("Unexpected error!")
+          e.printStackTrace()
       }
 
     }
