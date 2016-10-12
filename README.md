@@ -7,14 +7,14 @@ Bash-like shell implemented in Scala.
 In root-directory:
 
 ```sh
-user: ~/scala-shell$ sbt package
+user: ~/scala-shell$ sbt assembly
 ```
 
 After that, to launch shell:
 
 ```
 user: ~/scala-shell$ cd target/scala-2.11/
-user: ~/scala-shell/target/scala-2.11$ scala scalashell.jar
+user: ~/scala-shell/target/scala-2.11$ scala scalashell-assembly-1.0.jar
 ```
 
 ## Usage
