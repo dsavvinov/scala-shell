@@ -1,7 +1,7 @@
 package language
 
 import environment.Context
-import io.StringInputStream
+import io.streams.StringInputStream
 import language.preprocessing.Preprocessor
 import org.scalatest.FlatSpec
 

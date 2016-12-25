@@ -1,7 +1,8 @@
 package language.lexing
 
 import exceptions.{EscapedSymbolNotFoundException, IncompleteLexingException, UnclosedQuotationException}
-import io.{InputStream, ListBufferStream, ResettableStream}
+import io.ListBufferStream
+import io.streams.{ListBufferStream, ResettableStream}
 import language._
 
 /**

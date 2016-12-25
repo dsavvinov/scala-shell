@@ -1,6 +1,7 @@
-package interpretation
+package interpretation.commands
 
-import io.{InputStream, OutputStream}
+import io.OutputStream
+import io.streams.{InputStream, OutputStream}
 
 
 object CommandsFactory {

@@ -1,7 +1,8 @@
 package language.parsing
 
 import exceptions.{AssignmentValueNotFoundException, SyntaxError}
-import io.{InputStream, ResettableStream}
+import io.ResettableStream
+import io.streams.ResettableStream
 import language.lexing._
 import language.AST._
 

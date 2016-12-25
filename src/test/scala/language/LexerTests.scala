@@ -1,6 +1,6 @@
 package language
 
-import io.StringInputStream
+import io.streams.StringInputStream
 import language.lexing._
 import org.scalatest.FlatSpec
 

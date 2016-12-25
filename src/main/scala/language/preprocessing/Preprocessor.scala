@@ -3,6 +3,7 @@ package language.preprocessing
 import environment.Context
 import exceptions.{EscapedSymbolNotFoundException, UnclosedQuotationException}
 import io._
+import io.streams.{InputStream, ListBufferStream, ResettableStream, StringInputStream}
 import language.Alphabet
 
 import scala.collection.mutable.ListBuffer

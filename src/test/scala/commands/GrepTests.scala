@@ -3,8 +3,8 @@ package commands
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 
-import interpretation.Grep
-import io.ListBufferStream
+import interpretation.commands.Grep
+import io.streams.ListBufferStream
 
 import collection.JavaConverters._
 import org.scalatest.{FlatSpec, Outcome}

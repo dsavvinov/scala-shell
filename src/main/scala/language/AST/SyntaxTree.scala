@@ -1,6 +1,6 @@
 package language.AST
 
-import io.PrettyASTPrinter
+import language.AST.visitors.Printer
 
 import scala.collection.mutable.ListBuffer
 
@@ -12,9 +12,6 @@ import scala.collection.mutable.ListBuffer
   * comparing trees.
   */
 class SyntaxTree(val root: Node) {
-  var curNode: Node = root
-
-  def accept(visitor: Visitor) = root accept visitor
 
   override def equals(that: scala.Any): Boolean = {
     that match {
@@ -23,9 +20,9 @@ class SyntaxTree(val root: Node) {
   }
 
   override def toString: String = {
-    val pp = new PrettyASTPrinter()
-    root accept pp
-    pp.sb.toString()
+    val printer = new Printer()
+    root accept printer
+    printer.mkString
   }
 }
 
