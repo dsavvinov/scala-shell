@@ -1,6 +1,6 @@
 package language
 
-import io.StringInputStream
+import io.streams.StringInputStream
 import language.lexing.Lexer
 import language.AST._
 import language.parsing.Parser

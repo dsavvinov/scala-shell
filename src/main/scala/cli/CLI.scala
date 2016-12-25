@@ -3,6 +3,7 @@ package cli
 import environment.Context
 import exceptions._
 import interpretation.Interpreter
+import language.LanguageService
 import language.lexing.Lexer
 import language.parsing.Parser
 import language.preprocessing.Preprocessor
@@ -19,17 +20,7 @@ object CLI {
         // Read raw input
         val input = scala.io.StdIn.readLine()
 
-        // Preprocess, expanding substitutions
-        val preprocessedInput = Preprocessor.process(input, ctx)
-
-        // Tokenize
-        val tokenizedInput = Lexer.consume(preprocessedInput)
-
-        // Build syntax tree
-        val tree = Parser.parse(tokenizedInput)
-
-        // Run parsed tree
-        val result = Interpreter.run(tree, ctx)
+        val result = LanguageService.runInput(input, ctx)
       } catch {
 
         case e : ExternalCommandErrorException => {
@@ -51,7 +42,8 @@ object CLI {
           println("Syntax error: " + e.getMessage)
 
         case e : Throwable =>
-          println("Unexpected error: " + e.getMessage)
+          println("Unexpected error!")
+          e.printStackTrace()
       }
 
     }

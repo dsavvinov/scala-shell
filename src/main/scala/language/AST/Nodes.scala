@@ -1,6 +1,7 @@
 package language.AST
 
 import language.AST.ASTImplicits.NodesList
+import language.AST.visitors.Visitor
 
 import scala.collection.mutable.ListBuffer
 
@@ -22,22 +23,20 @@ import scala.collection.mutable.ListBuffer
   *
   */
 abstract class Node {
-  protected val childs: ListBuffer[Node] = new ListBuffer[Node]()
+  val childs: ListBuffer[Node] = new ListBuffer[Node]()
 
-  def accept(visitor: Visitor) = {
-    visitor.previsit(this)
-    childs.foreach(visitor.visit)
-    visitor.postvisit(this)
+  def accept[T](visitor: Visitor[T]): T = {
+    visitor.visit(this)
   }
 
-  def isLeaf = childs.isEmpty
+  def isLeaf: Boolean = childs.isEmpty
 
   def append(node: Node): Node = {
     childs.append(node)
     this
   }
 
-  def appendAll(childs: Traversable[Node]) = {
+  def appendAll(childs: Traversable[Node]): Unit = {
     childs.foreach { append }
   }
 
@@ -64,31 +63,39 @@ abstract class Node {
 
     true
   }
-
-  def toString: String
 }
 
 case class Program() extends Node {
-  def expresisons = childs.map { _.asInstanceOf[Expression] }
+  override def accept[T](visitor: Visitor[T]): T = visitor.visit(this)
+
+  def expresisons: ListBuffer[Expression] = childs.map { _.asInstanceOf[Expression] }
 }
 
-abstract class Expression extends Node { }
+abstract class Expression extends Node {
+  override def accept[T](visitor: Visitor[T]): T = visitor.visit(this)
+}
 
 case class AssignmentExpression() extends Expression {
+
+  override def accept[T](visitor: Visitor[T]): T = visitor.visit(this)
+
   override def equals(that: scala.Any): Boolean = {
     that match {
-      case that: AssignmentExpression => true
+      case _: AssignmentExpression => true
       case _ => false
     }
   }
   override def toString = "AssignmentExpression"
 
-  def variable = childs.head.asInstanceOf[Word].value
+  def variable: String = childs.head.asInstanceOf[Word].value
 
-  def value = childs(1).asInstanceOf[Word].value
+  def value: String = childs(1).asInstanceOf[Word].value
 }
 
 case class PipeExpression() extends Expression {
+
+  override def accept[T](visitor: Visitor[T]): T = visitor.visit(this)
+
   override def equals(that: scala.Any): Boolean = {
     that match {
       case that: PipeExpression => true
@@ -101,6 +108,9 @@ case class PipeExpression() extends Expression {
 }
 
 case class CommandExpression(name: String) extends Expression {
+
+  override def accept[T](visitor: Visitor[T]): T = visitor.visit(this)
+
   override def equals(that: scala.Any): Boolean = {
     that match {
       case that: CommandExpression => this.name == that.name
@@ -139,6 +149,9 @@ case class CommandExpression(name: String) extends Expression {
   *
   */
 case class Word(value: String) extends Expression {
+
+  override def accept[T](visitor: Visitor[T]): T = visitor.visit(this)
+
   override def equals(that: scala.Any): Boolean = {
     that match {
       case that: Word => this.value == that.value

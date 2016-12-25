@@ -2,6 +2,8 @@
 
 Bash-like shell implemented in Scala.
 
+[Pivotal Tracker Project](https://www.pivotaltracker.com/n/projects/1892777)
+
 ## Building
 
 In root-directory:
